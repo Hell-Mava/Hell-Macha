@@ -25,7 +25,7 @@ Instainsane is an Shell Script to perform multi-threaded brute force attack agai
 
 ### Usage:
 ```
-git clone https://github.com/bhikandeshmukh/instainsane.git
+git clone https://github.com/amine___v/instainsane.git
 cd instainsane
 chmod +x instainsane.sh
 sudo ./instainsane.sh
@@ -52,7 +52,7 @@ Usage of the tool for attacking targets without prior mutual consent is illegal.
 
 <p align="center">
 <h4 align="center">♨️ FOLLOW ♨️<h4 align="center">
-<a href="https://www.instagram.com/bhikan_deshmukh/"><img title="Instagram" src="https://img.shields.io/badge/instagram-%23E4405F.svg?&style=for-the-badge&logo=instagram&logoColor=white"></a>
+<a href="https://www.instagram.com/bhikamine___v/"><img title="Instagram" src="https://img.shields.io/badge/instagram-%23E4405F.svg?&style=for-the-badge&logo=instagram&logoColor=white"></a>
 <a href="https://wa.me/918600525401"><img title="whatsapp" src="https://img.shields.io/badge/WHATSAPP-%2325D366.svg?&style=for-the-badge&logo=whatsapp&logoColor=white"></a>
 <a href="https://www.facebook.com/thebhikandeshmukh"><img title="facebook" src="https://img.shields.io/badge/facebook-%231877F2.svg?&style=for-the-badge&logo=facebook&logoColor=white"></a>
 <a href="https://www.twitter.com/bhikan_deshmukh/"><img title="twitter" src="https://img.shields.io/badge/twitter-%231DA1F2.svg?&style=for-the-badge&logo=twitter&logoColor=white"></a>
