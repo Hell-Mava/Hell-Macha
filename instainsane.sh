@@ -119,7 +119,7 @@ sleep 6
 checkcount=0
 printf "\e[1;92m[*] Checking Tor connection on port:\e[0m\e[1;77m 9051\e[0m..."
 check1=$(curl --socks5-hostname localhost:9051 -s https://www.google.com > /dev/null; echo $?)
-if [[ "check1" -gt 0 ]]; then
+if [[ "$check1" -gt 0 ]]; then
 printf "\e[1;91mFAIL!\e[0m\n"
 else
 printf "\e[1;92mOK!\e[0m\n"
@@ -128,7 +128,7 @@ fi
 
 printf "\e[1;92m[*] Checking Tor connection on port:\e[0m\e[1;77m 9052\e[0m..."
 check2=$(curl --socks5-hostname localhost:9052 -s https://www.google.com > /dev/null; echo $?)
-if [[ "check2" -gt 0 ]]; then
+if [[ "$check2" -gt 0 ]]; then
 printf "\e[1;91mFAIL!\e[0m\n"
 else
 printf "\e[1;92mOK!\e[0m\n"
@@ -137,7 +137,7 @@ fi
  
 printf "\e[1;92m[*] Checking Tor connection on port:\e[0m\e[1;77m 9053\e[0m..."
 check3=$(curl --socks5-hostname localhost:9053 -s https://www.google.com > /dev/null; echo $?)
-if [[ "check3" -gt 0 ]]; then
+if [[ "$check3" -gt 0 ]]; then
 printf "\e[1;91mFAIL!\e[0m\n"
 else
 printf "\e[1;92mOK!\e[0m\n"
@@ -147,7 +147,7 @@ fi
 
 printf "\e[1;92m[*] Checking Tor connection on port:\e[0m\e[1;77m 9054\e[0m..."
 check4=$(curl --socks5-hostname localhost:9054 -s https://www.google.com > /dev/null; echo $?)
-if [[ "check4" -gt 0 ]]; then
+if [[ "$check4" -gt 0 ]]; then
 printf "\e[1;91mFAIL!\e[0m\n"
 else
 printf "\e[1;92mOK!\e[0m\n"
@@ -156,7 +156,7 @@ fi
 
 printf "\e[1;92m[*] Checking Tor connection on port:\e[0m\e[1;77m 9055\e[0m..."
 check5=$(curl --socks5-hostname localhost:9055 -s https://www.google.com > /dev/null; echo $?)
-if [[ "check5" -gt 0 ]]; then
+if [[ "$check5" -gt 0 ]]; then
 printf "\e[1;91mFAIL!\e[0m\n"
 else
 printf "\e[1;92mOK!\e[0m\n"
@@ -572,6 +572,9 @@ dependencies
 start
 multitor
 killall -HUP tor
+# Initialize countpass and count_pass
+countpass=0
+count_pass=$(wc -l $wl_pass | cut -d " " -f1)
 while [ $countpass -lt $count_pass ]; do
 
 killall -HUP tor
@@ -590,6 +593,8 @@ let turn-=60
 killall -HUP tor
 ###
 #pkill -f -HUP "tor -f multitor/multitor1"; pkill -f -HUP "tor -f multitor/multitor2"; pkill -f -HUP "tor -f multitor/multitor3"; pkill -f -HUP "tor -f multitor/multitor4"; pkill -f -HUP "tor -f multitor/multitor5"
+# Update countpass to track progress (increment by 100 since we process 100 passwords per iteration)
+let countpass+=100
 done
 exit 1
 esac
