@@ -60,7 +60,11 @@ fi
 
 checkroot() {
 if [[ "$(id -u)" -ne 0 ]]; then
-    printf "\e[1;77mPlease, run this program as root!\n\e[0m"
+    printf "\e[1;91m[!] Error: This program must be run as root!\n\e[0m"
+    printf "\e[1;92m[*] Run the script using one of these methods:\n\e[0m"
+    printf "\e[1;77m    - sudo ./instainsane.sh\n\e[0m"
+    printf "\e[1;77m    - sudo bash instainsane.sh\n\e[0m"
+    printf "\e[1;77m    - Or switch to root user first with 'sudo su' and then run './instainsane.sh'\n\e[0m"
     exit 1
 fi
 }
@@ -518,6 +522,7 @@ function resume() {
 banner 
 checkroot
 dependencies
+initialize_variables
 
 countern=1
 if [[ ! -d sessions ]]; then
