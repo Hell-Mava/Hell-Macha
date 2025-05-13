@@ -3,7 +3,7 @@
 - Save/Resume sessions
 - Anonymous attack through TOR
 - Check valid usernames
-- Default password list (best +39k 8 letters)
+- Default password list you can enter ypur own passwords in it
 - Check and Install all dependencies
 
 ### Usage:
