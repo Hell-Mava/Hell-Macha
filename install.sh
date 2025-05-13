@@ -1,6 +1,9 @@
 #!/bin/bash
-#Instagram: @bhikan_deshmukh
-#Creadit: github.com/thelinuxchoice
+#Hello Mava's, listen up:
+#This tool’s a blade.
+#Cut chains, not corners.
+#Use it only for justice — not chaos
+#By: Hell_Mava
 
 trap 'echo exiting cleanly...; exit 1;' SIGINT SIGTSTP
 
