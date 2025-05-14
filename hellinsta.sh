@@ -205,7 +205,7 @@ IFS=$'\n'
 countpass=$(grep -n -x "$pass" "$wl_pass" | cut -d ":" -f1)
 printf "user=\"%s\"\npass=\"%s\"\nwl_pass=\"%s\"\ntoken=\"%s\"\n" $user $pass $wl_pass $countpass > sessions/store.session.$user.$(date +"%FT%H%M")
 printf "\e[1;77mSession saved.\e[0m\n"
-printf "\e[1;92mUse ./hellinsta.sh --resume\n"
+printf "\e[1;92mUse ./instainsane.sh --resume\n"
 else
 exit 1
 fi
