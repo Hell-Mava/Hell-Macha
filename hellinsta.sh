@@ -42,18 +42,19 @@ printf "\e[1;77m  \/ /_/\__/\____/\____/  \e[0m\e[1;77m \____/\_\ \/  \__/ \/  \
 printf "\n"
 printf "\e[1;77m\e[41m  Instagram Brute Forcer v1.0, Author: @Hell-Mava (Github/IG)  \e[0m\n" #Don't change, noob
 printf "\n"
-}read -p $'\e[1;92mUsername account: \e[0m' user
+}
+read -p $'\e[1;92mUsername account: \e[0m' user
 checkaccount=$(curl -L -s https://www.instagram.com/$user/ | grep -c "the page may have been removed")
 if [[ "$checkaccount" == 1 ]]; then
-printf "\e[1;91mInvalid Username! Try again\e[0m\n"
-sleep 1
-start
+    printf "\e[1;91mInvalid Username! Try again\e[0m\n"
+    sleep 1
+    start
 else
-default_wl_pass="passwords.lst"
-read -p $'\e[1;92mPassword List (Enter to default list): \e[0m' wl_pass
-wl_pass="${wl_pass:-${default_wl_pass}}"
-default_threads="100"
-threads="${threads:-${default_threads}}"
+    default_wl_pass="passwords.lst"
+    read -p $'\e[1;92mPassword List (Enter to default list): \e[0m' wl_pass
+    wl_pass="${wl_pass:-${default_wl_pass}}"
+    default_threads="100"
+    threads="${threads:-${default_threads}}"
 fi
 }
 
